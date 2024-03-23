@@ -69,6 +69,8 @@ iptables -A FORWARD -j ACCEPT
 #allow NAT over all traffic
 iptables -t nat -A POSTROUTING -j MASQUERADE
 
+ip link set $lan_port up
+
 systemctl stop systemd-resolved
 systemctl disable systemd-resolved
 
