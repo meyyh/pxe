@@ -37,7 +37,7 @@ ip addr add 192.168.33.1/24 dev $lan_port
 ip route add 192.168.33.0/24 via 192.168.33.1 dev $lan_port
 
 apt-get -y update && apt-get -y upgrade
-apt-get -y install ipxe dnsmasq git
+apt-get -y install ipxe dnsmasq git iptables
 
 rm -rf pxe
 git clone https://github.com/meyyh/pxe
