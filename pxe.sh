@@ -33,6 +33,9 @@ while true; do
     	fi
 done
 
+echo "denyinterfaces $eth1" >> /etc/dhcpcd.conf
+systemctl restart dhcpcd
+
 ip addr add 192.168.33.1/24 dev $lan_port
 ip route add 192.168.33.0/24 via 192.168.33.1 dev $lan_port
 
