@@ -1,0 +1,29 @@
+#!ipxe
+
+:start
+menu PXE Boot Options
+item shell iPXE shell
+item netbootxyz load netboot.xyz
+item winpe winpe
+item exit Exit to BIOS
+
+choose --default exit --timeout 10000 option && goto ${option}
+
+:shell
+shell
+
+:netbootxyz
+chain --autofree http://boot.netboot.xyz
+
+:winpe
+set http http://172.16.0.40
+
+kernel ${http}/wimboot gui
+initrd -n bootx64.efi   ${http}/winpe/media/EFI/Boot/bootx64.efi        bootx64.efi
+initrd -n BCD           ${http}/winpe/media/EFI/Microsoft/Boot/BCD      BCD
+initrd -n boot.sdi      ${http}/winpe/media/Boot/boot.sdi               boot.sdi
+initrd -n boot.wim      ${http}/winpe/media/sources/boot.wim            boot.wim
+boot
+
+:exit
+exit
