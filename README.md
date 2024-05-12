@@ -26,9 +26,9 @@ software used is
 
 3. make ipxe menu
    ```
-   mkdir -p /tftp/menu && touch /tftp/menu/boot.ipxe
+   mkdir -p /tftp/menu && touch /tftp/menu/menu.ipxe
    ```
-   copy the boot.ipxe file in this repo into /tftp/menu/boot.ipxe
+   copy the menu.ipxe file in this repo into /tftp/menu/menu.ipxe
 4. setup nginx
     ```
     mkdir /srv/http
@@ -48,4 +48,15 @@ software used is
    ```
    systemctl enable nginx && systemctl start nginx && systemctl enable dnsmasq && systemctl start dnsmasq\
    ```
+## 2. get winpe files
+1. on a windows pc go to [ms adk install page](https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install) and download the winpe add on for adk (you dont need the full adk)
+2. after install go to ``` C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment ```
+   and replace the copype.cmd script with the one in this repo (originally found [here](https://superuser.com/questions/1333698/how-to-run-copype-cmd-for-winpe-from-batch-file))
+3. run the command
+   ```
+   .\copype.cmd amd64 C:\winpe
+   ```
+4. copy the entire C:\winpe folder to /srv/http/winpe
+   
+   
 
