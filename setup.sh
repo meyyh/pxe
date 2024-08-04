@@ -20,6 +20,7 @@ function interfaces()
     read TEMP_WAN
     if echo "$INTERFACES" | grep -qw "$TEMP_WAN"; then
         #valid interface found
+        echo ""
     else
         echo "not valid interface"
         interfaces
@@ -29,6 +30,7 @@ function interfaces()
     read TEMP_LAN
     if echo "$INTERFACES" | grep -qw "$TEMP_LAN"; then
         #valid interface found
+        echo ""
     else
         echo "not valid interface"
         interfaces
@@ -45,6 +47,8 @@ function interfaces()
 
 interfaces
 
+ip addr add 123.123.0.1/16 dev $LAN
+
 read -p "Delete /pxe-boot : " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
@@ -56,9 +60,9 @@ mkdir -p /pxe-boot/menu
 mkdir -p /pxe-boot/os/win
 mkdir /pxe-boot/os/linux
 
-apt-get install ipxe dnsmasq nginx git wget -y
+apt-get install ipxe dnsmasq nginx git iptables wget -y
 
-wget google.com
+wget -q google.com
 if [ -f index.html ]; then
     #network is working
     rm index.html
@@ -67,7 +71,13 @@ else
     exit 1
 fi
 
-git clone https://github.com/meyyh/pxe
+if [ -d "pxe" ]; then
+    cd pxe
+    git pull
+    cd ..
+else
+    git clone https://github.com/meyyh/pxe
+fi
 
 cp ./pxe/menu.ipxe /pxe-boot/menu/
 
@@ -80,5 +90,31 @@ sed -i "s/_rep-interface/$LAN/" /etc/dnsmasq.conf
 sed -i "s/_rep-dns-server/$DNS_SERVER/" /etc/dnsmasq.conf
 
 
+cp /usr/lib/ipxe/undionly.kpxe /pxe-boot
+cp /usr/lib/ipxe/ipxe.efi /pxe-boot
+
+#setup routing from lan to wan and back
+# enable ip forwarding in the kernel
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+# flush rules and delete chains
+iptables -F
+iptables -X
+
+# enable masquerading to allow LAN internet access
+iptables -t nat -A POSTROUTING -o $LAN -j MASQUERADE
+iptables -A FORWARD -i $LAN -o $WAN -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i $WAN -o $LAN -j ACCEPT
+
+iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+iptables -A FORWARD -i $WAN -o $LAN -m state --state NEW,RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i $LAN -o $WAN -j ACCEPT
+
+iptables -A INPUT -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+
+
 #start dnsmasq
 systemctl enable dnsmasq && systemctl start dnsmasq
+
+ip link set $LAN down
+ip link set $LAN up
