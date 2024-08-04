@@ -13,31 +13,34 @@ DNS_SERVER=$(cat /etc/resolv.conf | grep nameserver | cut -d " " -f 2)
 #get the wan and lan interface names
 function interfaces()
 {
+    # Display network interfaces with colors
     ip --color address
     INTERFACES=$(ip -o link show | awk -F': ' '{print $2}')
 
-    echo "enter the name of the wan interface"
-    read TEMP_WAN
-    if echo "$INTERFACES" | grep -qw "$TEMP_WAN"; then
-        #valid interface found
-        echo ""
-    else
-        echo "not valid interface"
-        interfaces
-    fi
+    while true; do
+        echo "Enter the name of the WAN interface:"
+        read TEMP_WAN
+        if echo "$INTERFACES" | grep -qw "$TEMP_WAN"; then
+            # Valid WAN interface found
+            break
+        else
+            echo "Not a valid interface. Please try again."
+        fi
+    done
 
-    echo "enter the name of the lan interface"
-    read TEMP_LAN
-    if echo "$INTERFACES" | grep -qw "$TEMP_LAN"; then
-        #valid interface found
-        echo ""
-    else
-        echo "not valid interface"
-        interfaces
-    fi
+    while true; do
+        echo "Enter the name of the LAN interface:"
+        read TEMP_LAN
+        if echo "$INTERFACES" | grep -qw "$TEMP_LAN"; then
+            # Valid LAN interface found
+            break
+        else
+            echo "Not a valid interface. Please try again."
+        fi
+    done
 
     if [ "$TEMP_WAN" = "$TEMP_LAN" ]; then
-        echo "WAN and LAN interfaces cant be the same"
+        echo "WAN and LAN interfaces can't be the same. Please try again."
         interfaces
     fi
 
