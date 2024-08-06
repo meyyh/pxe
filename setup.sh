@@ -10,6 +10,7 @@ WAN=""
 LAN=""
 DNS_SERVER=$(cat /etc/resolv.conf | grep nameserver | cut -d " " -f 2)
 PXE_DIR=/pxe
+GIT_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 # Display network interfaces with colors
@@ -23,7 +24,7 @@ while true; do
         # Valid WAN interface found
         break
     else
-        echo "Not a valid interface. Please try again."
+        echo -e "\033[31mNot a valid interface. Please try again.\033[0m"
     fi
 done
 
@@ -34,12 +35,12 @@ while true; do
         # Valid LAN interface found
         break
     else
-        echo "Not a valid interface. Please try again."
+        echo -e "\033[31mNot a valid interface. Please try again.\033[0m"
     fi
 done
 
 if [ "$TEMP_WAN" = "$TEMP_LAN" ]; then
-    echo "WAN and LAN interfaces can't be the same. Please try again."
+    echo -e "\033[31mWAN and LAN interfaces can't be the same. Please try again.\033[0m"
     exit 1
 fi
 
@@ -56,31 +57,27 @@ then
     rm -rf $PXE_DIR
 fi
 
-apt-get install ipxe dnsmasq nginx git iptables wget -y
-
-wget -q google.com
-if [ -f index.html ]; then
-    #network is working
-    rm index.html
-else
-    echo "cant wget google.com check internet connection\n"
-    exit 1
-fi
+apt-get install ipxe dnsmasq nginx iptables wget -y
 
 mkdir    $PXE_DIR
 mkdir    $PXE_DIR/menu
 mkdir -p $PXE_DIR/os/win
 mkdir    $PXE_DIR/os/linux
 
-cp ./pxe/menu.ipxe $PXE_DIR/menu/
+cp $GIT_REPO/menu.ipxe $PXE_DIR/menu/
 cp /usr/lib/ipxe/undionly.kpxe $PXE_DIR
 cp /usr/lib/ipxe/ipxe.efi $PXE_DIR
 cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
-cat ./pxe/dnsmasq.conf > /etc/dnsmasq.conf
+cat $GIT_REPO/dnsmasq.conf > /etc/dnsmasq.conf
 
 #replace values in dnsmasq.conf
 sed -i "s/_rep-interface/$LAN/" /etc/dnsmasq.conf
 sed -i "s/_rep-dns-server/$DNS_SERVER/" /etc/dnsmasq.conf
+
+#setup nginx config (idk why I make it a string)
+NGINX_CONFIG="server {\n\tlisten 80 default_server;\n\tlisten [::]:80 default_server;\n\troot /pxe/;\n\tindex index.html index.htm index.nginx-debian.html;\n\tserver_name _;\n\tlocation / {\n\t\tautoindex on;\n\t\troot /pxe/;\n\t}\n}"
+cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.orig
+echo -e $NGINX_CONFIG > /etc/nginx/sites-enabled/default
 
 #setup routing from lan to wan and back
 # enable ip forwarding in the kernel
@@ -103,6 +100,7 @@ iptables -A INPUT -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
 
 #start dnsmasq
 systemctl enable dnsmasq && systemctl start dnsmasq
+systemctl enable nginx && systemctl start nginx
 
 ip link set $LAN down
 ip link set $LAN up
