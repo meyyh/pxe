@@ -57,27 +57,50 @@ then
     rm -rf $PXE_DIR
 fi
 
-apt-get install ipxe dnsmasq nginx iptables wget -y
+apt-get install dnsmasq nginx iptables wget git nfs-server -y
+
+#for building ipxe
+apt-get install make gcc binutils perl mtools liblzma-dev -y
+
+#configure and build ipxe
+cd $GIT_REPO
+git clone https://github.com/ipxe/ipxe.git
+cd ipxe/src/config
+sed -i 's/#undef\sDOWNLOAD_PROTO_NFS/#define DOWNLOAD_PROTO_NFS/' general.h
+sed -i 's|^//\(.*#define\s*REBOOT_CMD\)|\1|' general.h
+sed -i 's|^//\(.*#define\s*POWEROFF_CMD\)|\1|' general.h
+sed -i 's|^//\(.*#define\s*PING_CMD\)|\1|' general.h
+sed -i 's|^//\(.*#define\s*NSLOOKUP_CMD\)|\1|' general.h
+sed -i 's|^//\(.*#define\s*CONSOLE_CMD\)|\1|' general.h
+sed -i 's|^//\(.*#define\s*CONSOLE_CMD\)|\1|' general.h
+sed -i 's|^//\(.*#define\s*CONSOLE_FRAMEBUFFER\)|\1|' console.h
+cd ..
+make bin-x86_64-pcbios/undionly.kpxe
+make bin-x86_64-efi/ipxe.efi
+cp bin-x86_64-pcbios/undionly.kpxe $PXE_DIR
+cp bin-x86_64-efi/ipxe.efi $PXE_DIR
+
 
 mkdir    $PXE_DIR
 mkdir    $PXE_DIR/menu
 mkdir -p $PXE_DIR/os/win
 mkdir    $PXE_DIR/os/linux
 
+wget https://github.com/ipxe/wimboot/releases/latest/download/wimboot
+mv wimboot /pxe/os/win/
+
 cp $GIT_REPO/menu.ipxe $PXE_DIR/menu/
-cp /usr/lib/ipxe/undionly.kpxe $PXE_DIR
-cp /usr/lib/ipxe/ipxe.efi $PXE_DIR
 cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
 cat $GIT_REPO/dnsmasq.conf > /etc/dnsmasq.conf
 
 #replace values in dnsmasq.conf
-sed -i "s/_rep-interface/$LAN/" /etc/dnsmasq.conf
-sed -i "s/_rep-dns-server/$DNS_SERVER/" /etc/dnsmasq.conf
+sed -i 's/_rep-interface/$LAN/' /etc/dnsmasq.conf
+sed -i 's/_rep-dns-server/$DNS_SERVER/' /etc/dnsmasq.conf
 
 #setup nginx config (idk why I make it a string)
-NGINX_CONFIG="server {\n\tlisten 80 default_server;\n\tlisten [::]:80 default_server;\n\troot /pxe/;\n\tindex index.html index.htm index.nginx-debian.html;\n\tserver_name _;\n\tlocation / {\n\t\tautoindex on;\n\t\troot /pxe/;\n\t}\n}"
-cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.orig
-echo -e $NGINX_CONFIG > /etc/nginx/sites-enabled/default
+NGINX_CONFIG="user www-data;\nworker_processes 1;\npid /run/nginx.pid;\nevents {\nworker_connections 1024;\n}\nhttp {\ndefault_type application/octet-stream;\nsendfile on;\ntcp_nopush on;\ntcp_nodelay on;\nkeepalive_timeout 65;\nserver {\nlisten 80 default_server;\nlisten [::]:80 default_server;\nroot /pxe/;\nindex index.html index.htm index.nginx-debian.html;\nserver_name _;\nlocation / {\nautoindex on;\n}\n}\n}"
+cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
+echo -e $NGINX_CONFIG > /etc/nginx/nginx.conf
 
 #setup routing from lan to wan and back
 # enable ip forwarding in the kernel
