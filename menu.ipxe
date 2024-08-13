@@ -4,7 +4,8 @@
 menu PXE        Boot Options
 item shell      iPXE shell
 item netbootxyz load netboot.xyz
-#item archlinux  load archlinux
+#item archlinux load archlinux
+item win11      load windows 11
 item winpe      winpe
 item exit       Exit to BIOS
 
@@ -24,6 +25,13 @@ chain --autofree http://boot.netboot.xyz
 #initrd ${http}/os/linux/arch/initramfs-linux.img
 #imgargs vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${http}/os/linux/arch/archlinux-x86_64/ ip=dhcp
 #boot
+
+:win11
+set win ${http}/os/win
+kernel ${win}/wimboot
+initrd ${win}/bcd       BCD
+initrd ${win}/boot.sdi  boot.sdi
+initrd ${win}/boot.wim  boot.wim
 
 :winpe
 kernel ${http}/wimboot gui
