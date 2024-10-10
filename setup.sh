@@ -12,8 +12,6 @@ DNS_SERVER=$(cat /etc/resolv.conf | grep nameserver | cut -d " " -f 2)
 PXE_DIR=/pxe
 GIT_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-
-# Display network interfaces with colors
 ip --color address
 INTERFACES=$(ip -o link show | awk -F': ' '{print $2}')
 
@@ -57,6 +55,11 @@ then
     rm -rf $PXE_DIR
 fi
 
+mkdir    $PXE_DIR
+mkdir    $PXE_DIR/menu
+mkdir -p $PXE_DIR/os/win
+mkdir    $PXE_DIR/os/linux
+
 apt-get install dnsmasq nginx iptables wget git nfs-server -y
 
 #for building ipxe
@@ -77,17 +80,12 @@ sed -i 's|^//\(.*#define\s*CONSOLE_FRAMEBUFFER\)|\1|' console.h
 cd ..
 make bin-x86_64-pcbios/undionly.kpxe
 make bin-x86_64-efi/ipxe.efi
-cp bin-x86_64-pcbios/undionly.kpxe $PXE_DIR
-cp bin-x86_64-efi/ipxe.efi $PXE_DIR
 
+cp bin-x86_64-pcbios/undionly.kpxe $PXE_DIR/undionly.kpxe
+cp bin-x86_64-efi/ipxe.efi $PXE_DIR/ipxe.efi
 
-mkdir    $PXE_DIR
-mkdir    $PXE_DIR/menu
-mkdir -p $PXE_DIR/os/win
-mkdir    $PXE_DIR/os/linux
-
-wget https://github.com/ipxe/wimboot/releases/latest/download/wimboot
-mv wimboot /pxe/os/win/
+#wget https://github.com/ipxe/wimboot/releases/latest/download/wimboot
+#mv wimboot /pxe/os/win/
 
 cp $GIT_REPO/menu.ipxe $PXE_DIR/menu/
 cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
@@ -97,7 +95,7 @@ cat $GIT_REPO/dnsmasq.conf > /etc/dnsmasq.conf
 sed -i 's/_rep-interface/$LAN/' /etc/dnsmasq.conf
 sed -i 's/_rep-dns-server/$DNS_SERVER/' /etc/dnsmasq.conf
 
-#setup nginx config (idk why I make it a string)
+#setup nginx config (idk why I made it a string)
 NGINX_CONFIG="user www-data;\nworker_processes 1;\npid /run/nginx.pid;\nevents {\nworker_connections 1024;\n}\nhttp {\ndefault_type application/octet-stream;\nsendfile on;\ntcp_nopush on;\ntcp_nodelay on;\nkeepalive_timeout 65;\nserver {\nlisten 80 default_server;\nlisten [::]:80 default_server;\nroot /pxe/;\nindex index.html index.htm index.nginx-debian.html;\nserver_name _;\nlocation / {\nautoindex on;\n}\n}\n}"
 cp /etc/nginx/nginx.conf /etc/nginx/nginx.conf.orig
 echo -e $NGINX_CONFIG > /etc/nginx/nginx.conf
