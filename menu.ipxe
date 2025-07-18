@@ -9,7 +9,8 @@ item win11      load windows 11
 item winpe      winpe
 item exit       Exit to BIOS
 
-set http http://123.123.0.1
+set http http://192.168.0.5
+ifopen net0
 
 choose --default exit --timeout 10000 option && goto ${option}
 
