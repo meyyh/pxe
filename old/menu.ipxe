@@ -1,0 +1,45 @@
+#!ipxe
+
+:start
+menu PXE        Boot Options
+item shell      iPXE shell
+item netbootxyz load netboot.xyz
+#item archlinux load archlinux
+item win11      load windows 11
+item winpe      winpe
+item exit       Exit to BIOS
+
+set http http://123.123.0.1
+
+choose --default exit --timeout 10000 option && goto ${option}
+
+:shell
+shell
+
+:netbootxyz
+chain --autofree http://boot.netboot.xyz
+
+#example arch linux pxe boot
+#:archlinux
+#kernel ${http}/os/linux/arch/vmlinuz-linux
+#initrd ${http}/os/linux/arch/initramfs-linux.img
+#imgargs vmlinuz-linux initrd=initramfs-linux.img archiso_http_srv=${http}/os/linux/arch/archlinux-x86_64/ ip=dhcp
+#boot
+
+:win11
+set win ${http}/os/win
+kernel ${win}/wimboot
+initrd ${win}/bcd       BCD
+initrd ${win}/boot.sdi  boot.sdi
+initrd ${win}/boot.wim  boot.wim
+
+:winpe
+kernel ${http}/wimboot gui
+initrd -n bootx64.efi   ${http}/winpe/media/EFI/Boot/bootx64.efi        bootx64.efi
+initrd -n BCD           ${http}/winpe/media/EFI/Microsoft/Boot/BCD      BCD
+initrd -n boot.sdi      ${http}/winpe/media/Boot/boot.sdi               boot.sdi
+initrd -n boot.wim      ${http}/winpe/media/sources/boot.wim            boot.wim
+boot
+
+:exit
+exit
