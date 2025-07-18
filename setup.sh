@@ -46,6 +46,7 @@ cd $GIT_REPO
 git clone https://github.com/ipxe/ipxe.git
 cd ipxe/src/config
 sed -i 's/#undef\sDOWNLOAD_PROTO_NFS/#define DOWNLOAD_PROTO_NFS/' general.h
+sed -i 's/#undef\sDOWNLOAD_PROTO_HTTPS/#define DOWNLOAD_PROTO_HTTPS/' general.h
 sed -i 's|^//\(.*#define\s*REBOOT_CMD\)|\1|' general.h
 sed -i 's|^//\(.*#define\s*POWEROFF_CMD\)|\1|' general.h
 sed -i 's|^//\(.*#define\s*PING_CMD\)|\1|' general.h
@@ -63,7 +64,7 @@ cp bin-x86_64-efi/ipxe.efi $PXE_DIR/ipxe.efi
 #wget https://github.com/ipxe/wimboot/releases/latest/download/wimboot
 #mv wimboot /pxe/os/win/
 
-cp $GIT_REPO/menu.ipxe $PXE_DIR/menu/
+cp $GIT_REPO/menu.ipxe $PXE_DIR/autoexec.ipxe
 cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
 cat $GIT_REPO/dnsmasq.conf > /etc/dnsmasq.conf
 
