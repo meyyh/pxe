@@ -68,7 +68,7 @@ cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
 cat $GIT_REPO/dnsmasq.conf > /etc/dnsmasq.conf
 
 #replace values in dnsmasq.conf
-sed -i 's/_rep-interface/$INTERFACE/' /etc/dnsmasq.conf
+sed -i "s/_rep-interface/$INTERFACE/" /etc/dnsmasq.conf
 
 #setup nginx config (idk why I made it a string)
 NGINX_CONFIG="user www-data;\nworker_processes 1;\npid /run/nginx.pid;\nevents {\nworker_connections 1024;\n}\nhttp {\ndefault_type application/octet-stream;\nsendfile on;\ntcp_nopush on;\ntcp_nodelay on;\nkeepalive_timeout 65;\nserver {\nlisten 80 default_server;\nlisten [::]:80 default_server;\nroot /pxe/;\nindex index.html index.htm index.nginx-debian.html;\nserver_name _;\nlocation / {\nautoindex on;\n}\n}\n}"
