@@ -11,6 +11,8 @@ item exit       Exit to BIOS
 
 set http http://192.168.0.5
 ifopen net0
+console --x 1920 --y 1080
+console --picture ${http}/x.png
 
 choose --default exit --timeout 10000 option && goto ${option}
 
