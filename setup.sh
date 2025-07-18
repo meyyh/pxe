@@ -65,7 +65,8 @@ cp bin-x86_64-efi/ipxe.efi $PXE_DIR/ipxe.efi
 #mv wimboot /pxe/os/win/
 
 cp $GIT_REPO/x.png $PXE_DIR/
-cp $GIT_REPO/menu.ipxe $PXE_DIR/autoexec.ipxe
+cp $GIT_REPO/menu.ipxe $PXE_DIR/autoexec.ipxe #sometime it looks for this instead of menu.ipxe idk why
+cp $GIT_REPO/menu.ipxe $PXE_DIR/menu/menu.ipxe
 cp /etc/dnsmasq.conf /etc/dnsmasq.conf.old
 cat $GIT_REPO/dnsmasq.conf > /etc/dnsmasq.conf
 
